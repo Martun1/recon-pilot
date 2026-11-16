@@ -13,6 +13,8 @@
 <img src="docs/scan.png" width="820" alt="recon-pilot scan">
 
 </div>
+> 🎥 **[Watch the demo video →](docs/demo.mp4)** (download to play)
+
 
 ---
 
