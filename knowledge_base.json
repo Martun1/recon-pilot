@@ -1,0 +1,50 @@
+{
+  "vulnerable_versions": [
+    {"match": "vsftpd 2\\.3\\.4", "severity": "CRITICAL", "title": "vsftpd 2.3.4 backdoor (smiley-face trigger)", "ref": "CVE-2011-2523",
+     "detail": "Compromised source tarball opens a root shell on port 6200. Classic lab box (Metasploitable 2)."},
+    {"match": "proftpd 1\\.3\\.3c", "severity": "CRITICAL", "title": "ProFTPD 1.3.3c backdoored release", "ref": "OSVDB-69562",
+     "detail": "Distribution archive was trojanised in 2010."},
+    {"match": "proftpd 1\\.3\\.5\\b", "severity": "HIGH", "title": "ProFTPD 1.3.5 mod_copy arbitrary file copy", "ref": "CVE-2015-3306",
+     "detail": "SITE CPFR/CPTO allow unauthenticated file copy, can lead to RCE via web root."},
+    {"match": "openssh ([1-6]\\.\\d|7\\.[0-6])", "severity": "MEDIUM", "title": "OpenSSH < 7.7: username enumeration", "ref": "CVE-2018-15473",
+     "detail": "Valid usernames can be distinguished, which helps targeted password attacks."},
+    {"match": "apache 2\\.4\\.49\\b", "severity": "CRITICAL", "title": "Apache 2.4.49 path traversal / RCE", "ref": "CVE-2021-41773"},
+    {"match": "apache 2\\.4\\.50\\b", "severity": "CRITICAL", "title": "Apache 2.4.50 path traversal / RCE (incomplete fix)", "ref": "CVE-2021-42013"},
+    {"match": "apache 2\\.2\\.", "severity": "MEDIUM", "title": "Apache 2.2.x is end-of-life (no security updates since 2018)", "ref": "EOL"},
+    {"match": "microsoft-iis 6\\.0", "severity": "CRITICAL", "title": "IIS 6.0 WebDAV buffer overflow", "ref": "CVE-2017-7269"},
+    {"match": "exim 4\\.(8[7-9]|9[01])\\b", "severity": "CRITICAL", "title": "Exim 4.87-4.91 remote command execution", "ref": "CVE-2019-10149"},
+    {"match": "php/5\\.", "severity": "MEDIUM", "title": "PHP 5.x is end-of-life", "ref": "EOL"},
+    {"match": "redis [2-4]\\.", "severity": "MEDIUM", "title": "Old Redis version (pre-6, no ACLs)", "ref": "EOL"}
+  ],
+  "banner_hints": [
+    {"match": "redis_version", "service": "redis", "severity": "HIGH", "title": "Redis answered INFO without authentication",
+     "detail": "Unauthenticated Redis can often be abused to write files (SSH keys, cron, webshell)."},
+    {"match": "anonymous", "service": "ftp", "severity": "MEDIUM", "title": "FTP banner mentions anonymous access"},
+    {"match": "^220.*(ubuntu|debian|centos|win32|windows)", "service": null, "severity": "INFO", "title": "Banner leaks the operating system"},
+    {"match": "Server: .*\\d", "service": "http", "severity": "LOW", "title": "Web server discloses its exact version (ServerTokens)"},
+    {"match": "X-Powered-By:", "service": "http", "severity": "LOW", "title": "X-Powered-By header leaks the backend technology"},
+    {"match": ".", "service": "telnet", "severity": "HIGH", "title": "Telnet transmits credentials in clear text"}
+  ],
+  "next_steps": {
+    "ftp": ["nmap -sV -sC -p{P} {T}", "ftp {T} {P}   # try anonymous:anonymous", "wget -m --no-passive ftp://anonymous:anonymous@{T}:{P}",
+            "searchsploit <product> <version>", "hydra -L users.txt -P passwords.txt ftp://{T}:{P}   # only if in scope"],
+    "ssh": ["ssh-audit {T} -p {P}", "nmap -p{P} --script ssh2-enum-algos,ssh-auth-methods {T}", "ssh -v user@{T} -p {P}   # check auth methods / banner",
+            "hydra -L users.txt -P passwords.txt ssh://{T}:{P} -t 4   # only if in scope"],
+    "http": ["whatweb http://{T}:{P}", "curl -sI http://{T}:{P}", "gobuster dir -u http://{T}:{P} -w /usr/share/wordlists/dirb/common.txt",
+             "nikto -h http://{T}:{P}", "curl -s http://{T}:{P}/robots.txt"],
+    "https": ["whatweb https://{T}:{P}", "sslscan {T}:{P}", "gobuster dir -k -u https://{T}:{P} -w /usr/share/wordlists/dirb/common.txt", "nikto -h https://{T}:{P}"],
+    "smtp": ["nmap -p{P} --script smtp-commands,smtp-enum-users {T}", "nc {T} {P}   # EHLO test / VRFY root", "smtp-user-enum -M VRFY -U users.txt -t {T}"],
+    "smb": ["smbclient -L //{T}/ -N", "enum4linux -a {T}", "nmap -p{P} --script smb-os-discovery,smb-enum-shares,smb-vuln* {T}", "crackmapexec smb {T}"],
+    "netbios-ssn": ["nmblookup -A {T}", "enum4linux -a {T}"],
+    "mysql": ["nmap -p{P} --script mysql-info,mysql-empty-password {T}", "mysql -h {T} -P {P} -u root   # try empty password"],
+    "postgresql": ["psql -h {T} -p {P} -U postgres", "nmap -p{P} --script pgsql-brute {T}   # only if in scope"],
+    "redis": ["redis-cli -h {T} -p {P} INFO", "redis-cli -h {T} -p {P} CONFIG GET dir"],
+    "rdp": ["nmap -p{P} --script rdp-enum-encryption,rdp-ntlm-info {T}", "xfreerdp /v:{T}:{P} /u:user"],
+    "telnet": ["telnet {T} {P}", "nmap -p{P} --script telnet-ntlm-info {T}"],
+    "dns": ["dig axfr @{T} <domain>", "nmap -p{P} --script dns-nsid {T}"],
+    "vnc": ["nmap -p{P} --script vnc-info,realvnc-auth-bypass {T}", "vncviewer {T}::{P}"],
+    "pop3": ["nmap -p{P} --script pop3-capabilities {T}"],
+    "imap": ["nmap -p{P} --script imap-capabilities {T}"],
+    "unknown": ["nmap -sV -sC -p{P} {T}", "nc -nv {T} {P}"]
+  }
+}
